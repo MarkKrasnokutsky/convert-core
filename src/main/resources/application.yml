@@ -4,9 +4,18 @@ spring:
     username: admin
     password: admin
     url: jdbc:postgresql://localhost:28072/backend-db
+  liquibase:
+    changeLog: classpath:/db/db.changelog-master.xml
+    databaseChangeLogTable: _databasechangelog
+    databaseChangeLogLockTable: _databasechangeloglock
   application:
     name: convert-core
   kafka:
+    topic:
+      convert-request:
+        name: convert-request
+      convert-response:
+        name: convert-response
     bootstrap-servers: localhost:29092,localhost:29093,localhost:29094
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -23,3 +32,8 @@ spring:
       group-id: request_consumer
 server:
   port: 8080
+
+minio:
+  url: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin123

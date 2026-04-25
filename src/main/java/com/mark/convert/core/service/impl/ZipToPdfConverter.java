@@ -1,6 +1,10 @@
 package com.mark.convert.core.service.impl;
 
-import com.mark.convert.core.service.IConvertService;
+import com.mark.convert.core.exception.ConvertException;
+import com.mark.convert.core.messaging.domain.FileFormats;
+import com.mark.convert.core.service.ConvertService;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.io.MemoryUsageSetting;
@@ -21,12 +25,15 @@ import java.util.zip.ZipInputStream;
 
 @Slf4j
 @Component
-public class ZipToPdfConverter implements IConvertService {
+@RequiredArgsConstructor
+public class ZipToPdfConverter implements ConvertService {
 
-    private final Map<String, IConvertService> converterMap = new HashMap<>();
+    private final Map<String, ConvertService> converterMap = new HashMap<>();
+    private final List<ConvertService> converters;
 
-    public ZipToPdfConverter(List<IConvertService> converters) {
-        for (IConvertService converter : converters) {
+    @PostConstruct
+    public void init() {
+        for (ConvertService converter : converters) {
             if (converter instanceof ZipToPdfConverter) {
                 continue;
             }
@@ -34,10 +41,10 @@ public class ZipToPdfConverter implements IConvertService {
             String format = converter.getSupportedFormat();
             converterMap.put(format.toLowerCase(), converter);
 
-            if ("image".equals(format)) {
-                converterMap.put("png", converter);
-                converterMap.put("jpg", converter);
-                converterMap.put("jpeg", converter);
+            if (FileFormats.IMAGE.equals(format)) {
+                converterMap.put(FileFormats.PNG, converter);
+                converterMap.put(FileFormats.JPG, converter);
+                converterMap.put(FileFormats.JPEG, converter);
             }
         }
         log.info("ZipConverter initialized with {} supported formats: {}",
@@ -72,7 +79,7 @@ public class ZipToPdfConverter implements IConvertService {
 
                         log.info("Processing ZIP entry: {} (extension: {})", fileName, extension);
 
-                        IConvertService converter = converterMap.get(extension.toLowerCase());
+                        ConvertService converter = converterMap.get(extension.toLowerCase());
 
                         if (converter != null) {
                             byte[] entryContent = zis.readAllBytes();
@@ -87,7 +94,7 @@ public class ZipToPdfConverter implements IConvertService {
                                     log.info("Queued {} pages from {}", doc.getNumberOfPages(), fileName);
                                 }
 
-                            } catch (Exception e) {
+                            } catch (ConvertException e) {
                                 log.error("Failed to convert entry '{}' to PDF", fileName, e);
                             }
                         } else {
@@ -99,10 +106,10 @@ public class ZipToPdfConverter implements IConvertService {
             }
 
             if (!hasEntries) {
-                throw new RuntimeException("ZIP archive is empty");
+                throw new ConvertException("ZIP archive is empty");
             }
             if (totalPages == 0) {
-                throw new RuntimeException("No valid files found in ZIP archive for conversion");
+                throw new ConvertException("No valid files found in ZIP archive for conversion");
             }
 
             merger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly().streamCache);
@@ -111,9 +118,11 @@ public class ZipToPdfConverter implements IConvertService {
             log.info("ZIP conversion completed. Total pages: {}", totalPages);
             return result;
 
+        } catch (ConvertException e) {
+            throw e; // пробрасываем как есть, не оборачиваем повторно
         } catch (Exception e) {
             log.error("Failed to convert ZIP to PDF", e);
-            throw new RuntimeException("Failed to convert ZIP to PDF: " + e.getMessage(), e);
+            throw new ConvertException(FileFormats.ZIP, e);
         } finally {
             if (tempZipFile != null && tempZipFile.exists()) {
                 tempZipFile.delete();
@@ -131,6 +140,6 @@ public class ZipToPdfConverter implements IConvertService {
 
     @Override
     public String getSupportedFormat() {
-        return "zip";
+        return FileFormats.ZIP;
     }
 }

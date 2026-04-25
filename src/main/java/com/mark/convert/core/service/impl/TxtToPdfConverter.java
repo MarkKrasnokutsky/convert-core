@@ -1,6 +1,8 @@
 package com.mark.convert.core.service.impl;
 
-import com.mark.convert.core.service.IConvertService;
+import com.mark.convert.core.exception.ConvertException;
+import com.mark.convert.core.messaging.domain.FileFormats;
+import com.mark.convert.core.service.ConvertService;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -15,7 +17,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
 @Component
-public class TxtToPdfConverter implements IConvertService {
+public class TxtToPdfConverter implements ConvertService {
 
     @Override
     public byte[] convertToPdf(byte[] fileContent) {
@@ -77,12 +79,12 @@ public class TxtToPdfConverter implements IConvertService {
             return baos.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to convert TXT to PDF", e);
+            throw new ConvertException("Failed to convert TXT to PDF", e);
         }
     }
 
     @Override
     public String getSupportedFormat() {
-        return "txt";
+        return FileFormats.TXT;
     }
 }

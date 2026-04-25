@@ -2,7 +2,7 @@ package com.mark.convert.core.service;
 
 import java.io.IOException;
 
-public interface IFileReadService {
+public interface FileReadService {
 
     byte[] downloadFileAsBytes(String bucketName, String path) throws IOException;
 

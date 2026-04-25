@@ -1,25 +1,29 @@
 package com.mark.convert.core.messaging.domain.entity;
 
-import com.mark.convert.core.messaging.domain.enumeration.EInboxStatus;
+import com.mark.convert.core.messaging.domain.enumeration.InboxStatus;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inbox_messages")
-@Data
+@Getter
+@Setter
 public class InboxMessage {
 
     @Id
     private String id;
 
     @Enumerated(EnumType.STRING)
-    private EInboxStatus status;
+    @Column(nullable = false)
+    private InboxStatus status;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String payload;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt;
     private LocalDateTime processedAt;
 }

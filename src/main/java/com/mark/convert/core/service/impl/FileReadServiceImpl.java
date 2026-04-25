@@ -1,7 +1,8 @@
 package com.mark.convert.core.service.impl;
 
 import com.mark.convert.core.config.MinioConfig;
-import com.mark.convert.core.service.IFileReadService;
+import com.mark.convert.core.exception.ManageFileException;
+import com.mark.convert.core.service.FileReadService;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -19,12 +20,13 @@ import java.security.NoSuchAlgorithmException;
 @RequiredArgsConstructor
 @Slf4j
 @Service
-public class FileReadServiceImpl implements IFileReadService {
+public class FileReadServiceImpl implements FileReadService {
 
-    private final MinioClient minioClient = MinioConfig.createClient();
+    private final MinioConfig minioConfig;
 
     @Override
     public byte[] downloadFileAsBytes(String bucketName, String objectName) {
+        MinioClient minioClient = minioConfig.createClient();
         try {
             InputStream stream = minioClient.getObject(
                     GetObjectArgs.builder()
@@ -36,12 +38,13 @@ public class FileReadServiceImpl implements IFileReadService {
             System.out.println("Файл '" + objectName + "' загружен как поток.");
             return bytes;
         } catch (MinioException | IOException | InvalidKeyException | NoSuchAlgorithmException e) {
-            throw new RuntimeException("Ошибка загрузки файла: " + e.getMessage(), e);
+            throw new ManageFileException("Failed download file: " + e.getMessage(), e);
         }
     }
 
     @Override
     public void uploadBytesAsPdf(String bucketName, String filePath, byte[] pdfBytes) {
+        MinioClient minioClient = minioConfig.createClient();
         try {
             try (ByteArrayInputStream inputStream = new ByteArrayInputStream(pdfBytes)) {
                 minioClient.putObject(
@@ -55,7 +58,7 @@ public class FileReadServiceImpl implements IFileReadService {
                 log.info("Uploaded PDF of {} bytes to {}", pdfBytes.length, filePath);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to upload PDF: " + filePath, e);
+            throw new ManageFileException("Failed to upload PDF: " + filePath, e);
         }
     }
 

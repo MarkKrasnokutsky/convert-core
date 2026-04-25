@@ -1,6 +1,8 @@
 package com.mark.convert.core.service.impl;
 
-import com.mark.convert.core.service.IConvertService;
+import com.mark.convert.core.exception.ConvertException;
+import com.mark.convert.core.messaging.domain.FileFormats;
+import com.mark.convert.core.service.ConvertService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -17,7 +19,7 @@ import java.io.IOException;
 
 @Slf4j
 @Component
-public class ImageToPdfConverter implements IConvertService {
+public class ImageToPdfConverter implements ConvertService {
 
     @Override
     public byte[] convertToPdf(byte[] fileContent) {
@@ -28,7 +30,7 @@ public class ImageToPdfConverter implements IConvertService {
             BufferedImage image = ImageIO.read(bis);
 
             if (image == null) {
-                throw new RuntimeException("Cannot read image from bytes - unsupported format or corrupted file");
+                throw new ConvertException("Cannot read image from bytes - unsupported format or corrupted file");
             }
 
             float imageWidth = image.getWidth();
@@ -70,15 +72,15 @@ public class ImageToPdfConverter implements IConvertService {
 
         } catch (IOException e) {
             log.error("Failed to convert image to PDF", e);
-            throw new RuntimeException("Failed to convert image to PDF: " + e.getMessage(), e);
+            throw new ConvertException("Failed to convert image to PDF: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Unexpected error during image to PDF conversion", e);
-            throw new RuntimeException("Unexpected error during image to PDF conversion", e);
+            throw new ConvertException("Unexpected error during image to PDF conversion", e);
         }
     }
 
     @Override
     public String getSupportedFormat() {
-        return "image";
+        return FileFormats.IMAGE;
     }
 }
