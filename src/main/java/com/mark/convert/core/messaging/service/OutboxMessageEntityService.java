@@ -5,7 +5,9 @@ import com.mark.convert.core.messaging.domain.enumeration.OutboxStatus;
 import com.mark.convert.core.messaging.repository.OutboxMessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,6 +21,13 @@ public class OutboxMessageEntityService {
     }
 
     public void save(OutboxMessage outboxMessage) {
+        outboxMessageRepository.save(outboxMessage);
+    }
+
+    @Transactional
+    public void saveSentOutboxMessage(OutboxMessage outboxMessage) {
+        outboxMessage.setStatus(OutboxStatus.SENT);
+        outboxMessage.setSentAt(LocalDateTime.now());
         outboxMessageRepository.save(outboxMessage);
     }
 }

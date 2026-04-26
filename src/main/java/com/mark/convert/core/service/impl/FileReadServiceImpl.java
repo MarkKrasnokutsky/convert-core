@@ -35,7 +35,7 @@ public class FileReadServiceImpl implements FileReadService {
                             .build()
             );
             byte[] bytes = stream.readAllBytes();
-            System.out.println("Файл '" + objectName + "' загружен как поток.");
+            log.info("Файл {} загружен как поток.", objectName);
             return bytes;
         } catch (MinioException | IOException | InvalidKeyException | NoSuchAlgorithmException e) {
             throw new ManageFileException("Failed download file: " + e.getMessage(), e);
