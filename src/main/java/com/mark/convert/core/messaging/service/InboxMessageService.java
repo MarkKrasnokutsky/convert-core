@@ -3,6 +3,7 @@ package com.mark.convert.core.messaging.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mark.convert.core.messaging.domain.ConvertRequestMessage;
 import com.mark.convert.core.messaging.domain.ConvertResponseMessage;
+import com.mark.convert.core.messaging.domain.FileFormats;
 import com.mark.convert.core.messaging.domain.entity.InboxMessage;
 import com.mark.convert.core.messaging.domain.entity.OutboxMessage;
 import com.mark.convert.core.messaging.domain.enumeration.InboxStatus;
@@ -34,18 +35,22 @@ public class InboxMessageService {
 
         for (InboxMessage inboxMessage : pendingMessages) {
             try {
-                ConvertRequestMessage request = objectMapper.readValue(
-                        inboxMessage.getPayload(), ConvertRequestMessage.class
-                );
-                String fullPath = request.getPath() + "/" + request.getFileName() + "." + request.getTypeFormat();
+                String json = objectMapper.readValue(inboxMessage.getPayload(), String.class); // сначала разворачиваем строку
+
+                ConvertRequestMessage request = objectMapper.readValue(json, ConvertRequestMessage.class); // потом парсим объект
+
+                String fullPath = request.getPath();
 
                 byte[] file = fileReadService.downloadFileAsBytes(request.getBucketName(), fullPath);
 
-                ConvertService convertService = converterFactory.getConverter(request.getTypeFormat());
+                String format = normalizeFormat(request.getTypeFormat());
+                ConvertService convertService = converterFactory.getConverter(format);
                 byte[] convertedFile = convertService.convertToPdf(file);
 
-                String pdfPath = request.getPath() + "/" + request.getFileName() + ".pdf";
-                fileReadService.uploadBytesAsPdf(request.getBucketName(), pdfPath, convertedFile);
+                String pdfPath = removeExtension(request.getPath()) + ".pdf";
+                boolean flag = fileReadService.uploadBytesAsPdf(request.getBucketName(), pdfPath, convertedFile);
+
+                String pdfFileName = removeExtension(request.getFileName()) + ".pdf";
 
                 OutboxMessage outboxMessage = new OutboxMessage();
                 outboxMessage.setTopic("convert-response");
@@ -54,8 +59,10 @@ public class InboxMessageService {
                 outboxMessage.setPayload(objectMapper.writeValueAsString(
                         ConvertResponseMessage.builder()
                                 .path(pdfPath)
-                                .fileName(request.getFileName() + ".pdf")
+                                .bucketName(request.getBucketName())
+                                .fileName(pdfFileName)
                                 .createdAt(Instant.now())
+                                .status(flag ? "SUCCESS" : "FAILURE")
                                 .build()
                 ));
                 outboxMessageEntityService.save(outboxMessage);
@@ -71,6 +78,27 @@ public class InboxMessageService {
                 inboxMessageEntityService.save(inboxMessage);
             }
         }
+    }
+
+    private static String removeExtension(String filePath) {
+        int lastDot = filePath.lastIndexOf('.');
+        int lastSeparator = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+
+        if (lastDot > lastSeparator && lastDot > 0) {
+            return filePath.substring(0, lastDot);
+        }
+        return filePath;
+    }
+
+    private String normalizeFormat(String typeFormat) {
+        return switch (typeFormat) {
+            case "application/zip" -> FileFormats.ZIP;
+            case "text/plain"      -> FileFormats.TXT;
+            case "image/png"       -> FileFormats.PNG;
+            case "image/jpg",
+                 "image/jpeg"      -> FileFormats.JPEG;
+            default -> typeFormat;
+        };
     }
 
 }

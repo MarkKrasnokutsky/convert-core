@@ -6,6 +6,6 @@ public interface FileReadService {
 
     byte[] downloadFileAsBytes(String bucketName, String path) throws IOException;
 
-    void uploadBytesAsPdf(String bucketName, String filePath, byte[] pdfBytes);
+    boolean uploadBytesAsPdf(String bucketName, String filePath, byte[] pdfBytes);
 
 }

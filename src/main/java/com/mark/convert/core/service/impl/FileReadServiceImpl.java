@@ -43,7 +43,7 @@ public class FileReadServiceImpl implements FileReadService {
     }
 
     @Override
-    public void uploadBytesAsPdf(String bucketName, String filePath, byte[] pdfBytes) {
+    public boolean uploadBytesAsPdf(String bucketName, String filePath, byte[] pdfBytes) {
         MinioClient minioClient = minioConfig.createClient();
         try {
             try (ByteArrayInputStream inputStream = new ByteArrayInputStream(pdfBytes)) {
@@ -56,6 +56,7 @@ public class FileReadServiceImpl implements FileReadService {
                                 .build()
                 );
                 log.info("Uploaded PDF of {} bytes to {}", pdfBytes.length, filePath);
+                return true;
             }
         } catch (Exception e) {
             throw new ManageFileException("Failed to upload PDF: " + filePath, e);

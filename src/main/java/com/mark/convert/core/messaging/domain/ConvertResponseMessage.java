@@ -17,5 +17,6 @@ public class ConvertResponseMessage {
     private String bucketName;
     private String fileName;
     private Instant createdAt;
+    private String status;
 
 }

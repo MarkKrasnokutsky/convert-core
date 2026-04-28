@@ -22,6 +22,7 @@ public class OutboxMessageService {
 
         for (OutboxMessage outboxMessage : pendingMessages) {
             try {
+                outboxMessage.setStatus(OutboxStatus.SENT);
                 kafkaTemplate.send(outboxMessage.getTopic(), outboxMessage.getPayload()).get();
 
                 outboxMessageEntityService.saveSentOutboxMessage(outboxMessage);
@@ -32,6 +33,7 @@ public class OutboxMessageService {
                 log.error("Failed to send outbox message {}", outboxMessage.getId(), e);
                 outboxMessage.setStatus(OutboxStatus.FAILED);
                 outboxMessageEntityService.save(outboxMessage);
+                outboxMessage.setStatus(OutboxStatus.FAILED);
             }
         }
     }
