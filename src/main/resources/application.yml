@@ -37,3 +37,10 @@ minio:
   url: http://localhost:9000
   accessKey: minioadmin
   secretKey: minioadmin123
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.uuid}
+  client:
+    service-url:
+      defaultZone: http://localhost:1000/eureka
