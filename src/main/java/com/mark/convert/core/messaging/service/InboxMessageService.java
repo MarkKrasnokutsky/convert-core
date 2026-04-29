@@ -14,6 +14,7 @@ import com.mark.convert.core.service.factory.ConverterFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class InboxMessageService {
     private final OutboxMessageEntityService outboxMessageEntityService;
     private final InboxMessageEntityService inboxMessageEntityService;
 
+    @Transactional
     public void processMessages() {
         List<InboxMessage> pendingMessages = inboxMessageEntityService.findByStatus(InboxStatus.PENDING);
 
